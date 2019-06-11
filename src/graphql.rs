@@ -34,7 +34,6 @@ pub fn perform_me_query(api_key: &str) -> Result<String, Box<Error>> {
         .send()?;
 
     let json_as_text = res.text()?;
-    println!("response text: {:?}", json_as_text);
     let response_body: Value = serde_json::from_str(&json_as_text)?;
     let name = &response_body["data"]["me"]["name"];
     match name {
