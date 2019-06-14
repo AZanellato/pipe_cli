@@ -5,8 +5,8 @@ use structopt::StructOpt;
 pub struct Opts {
     // Which card to get
     #[structopt(long = "card", short = "c")]
-    card_id: Option<usize>,
+    pub card_id: Option<usize>,
     // Which pipe to get
     #[structopt(long = "pipe", short = "p")]
-    pipe_id: Option<usize>,
+    pub pipe_id: Option<usize>,
 }
