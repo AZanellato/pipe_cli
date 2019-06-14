@@ -1,4 +1,4 @@
-use crate::graphql::perform_me_query;
+use crate::graphql::me_query;
 use dialoguer::{theme::ColorfulTheme, PasswordInput};
 use serde::{Deserialize, Serialize};
 use std::{error, fmt};
@@ -67,7 +67,7 @@ fn get_api_key() -> String {
 }
 
 fn test_api_key(api_key: String) -> Result<ApiKey, InvalidAPIKey> {
-    let result = perform_me_query(&api_key);
+    let result = me_query(&api_key);
     match result {
         Ok(name) => Ok(ApiKey {
             name: name,
