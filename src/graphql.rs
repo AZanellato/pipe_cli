@@ -54,6 +54,7 @@ pub fn card_query(api_key: &str, card_id: i32) -> Result<String, Box<Error>> {
             title
             fields {{
                 value
+                name
     }} }} }}",
         id = card_id
     );
@@ -61,10 +62,12 @@ pub fn card_query(api_key: &str, card_id: i32) -> Result<String, Box<Error>> {
     query.insert("query", card_query_string);
     let text_response = perform_query(api_key, query)?;
     let response_body: Value = serde_json::from_str(&text_response)?;
-    let response = &response_body["data"]["card"]["title"];
-    let print_res = response_body["data"]["card"]["fields"][0].to_string();
-    print.string(print_res)?;
-    match response {
+    let title = &response_body["data"]["card"]["title"];
+    let field_values =
+        serde_json::to_string_pretty(&response_body["data"]["card"]["fields"]).unwrap();
+    print.string_with_header(field_values, title.to_string())?;
+
+    match title {
         serde_json::Value::String(response) => Ok(response.to_string()),
         _ => Err(Box::new(Unauthorized::new())),
     }
