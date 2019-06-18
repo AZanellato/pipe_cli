@@ -1,11 +1,8 @@
-use prettyprint::{PrettyPrintError, PrettyPrinter};
+use prettyprint::PrettyPrinter;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::error::Error;
-use std::{
-    error,
-    fmt::{self, write},
-};
+use std::{error, fmt};
 
 #[derive(Debug, Clone)]
 struct Unauthorized;
@@ -39,9 +36,9 @@ pub fn me_query(api_key: &str) -> Result<String, Box<Error>> {
     }
 }
 
-pub fn card_query_and_print(api_key: &str, card_id: i32) -> Result<String, Box<Error>> {
+pub fn card_query_and_print(api_key: &str, card_id: i32) -> Result<(), Box<Error>> {
     let print = PrettyPrinter::default()
-        .language("javascript")
+        .language("rust")
         .grid(true)
         .line_numbers(true)
         .build()
@@ -62,13 +59,12 @@ pub fn card_query_and_print(api_key: &str, card_id: i32) -> Result<String, Box<E
     query.insert("query", card_query_string);
     let text_response = perform_query(api_key, query)?;
     let response_body: Value = serde_json::from_str(&text_response)?;
-    let title = &response_body["data"]["card"]["title"];
-    match title {
+    match &response_body["data"]["card"]["title"] {
         serde_json::Value::String(response) => {
             let field_values =
                 serde_json::to_string_pretty(&response_body["data"]["card"]["fields"]).unwrap();
-            print.string_with_header(field_values, title.to_string())?;
-            Ok(response.to_string())
+            print.string_with_header(field_values, response.to_string())?;
+            Ok(())
         }
         _ => Err(Box::new(Unauthorized::new())),
     }
