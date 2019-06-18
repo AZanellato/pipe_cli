@@ -70,6 +70,64 @@ pub fn card_query_and_print(api_key: &str, card_id: i32) -> Result<(), Box<Error
     }
 }
 
+pub fn pipe_name_query(api_key: &str, pipe_id: i32) -> Result<(), Box<Error>> {
+    let print = PrettyPrinter::default()
+        .language("rust")
+        .grid(true)
+        .line_numbers(true)
+        .build()
+        .unwrap();
+    let mut query: HashMap<&str, String> = HashMap::new();
+    let format_pipe_query_string = format!(
+        "query {{
+        pipe(id: {id}) {{
+            name
+    }} }}",
+        id = pipe_id
+    );
+    let pipe_query_string = String::from(format_pipe_query_string);
+    query.insert("query", pipe_query_string);
+    let text_response = perform_query(api_key, query)?;
+    let response_body: Value = serde_json::from_str(&text_response)?;
+    match &response_body["data"]["pipe"]["name"] {
+        serde_json::Value::String(response) => {
+            print.string_with_header(response.to_string(), "Pipe Name".to_string())?;
+            Ok(())
+        }
+        _ => Err(Box::new(Unauthorized::new())),
+    }
+}
+
+pub fn pipe_phases_query(api_key: &str, pipe_id: i32) -> Result<(), Box<Error>> {
+    let print = PrettyPrinter::default()
+        .language("rust")
+        .grid(true)
+        .line_numbers(true)
+        .build()
+        .unwrap();
+    let mut query: HashMap<&str, String> = HashMap::new();
+    let format_pipe_query_string = format!(
+        "query {{
+        pipe(id: {id}) {{
+            phases {{ name cards_count description }}
+    }} }}",
+        id = pipe_id
+    );
+    let pipe_query_string = String::from(format_pipe_query_string);
+    query.insert("query", pipe_query_string);
+    let text_response = perform_query(api_key, query)?;
+    let response_body: Value = serde_json::from_str(&text_response)?;
+    match &response_body["data"]["pipe"]["phases"] {
+        serde_json::Value::Array(_) => {
+            let phases =
+                serde_json::to_string_pretty(&response_body["data"]["pipe"]["phases"]).unwrap();
+            print.string_with_header(phases, "Phases".to_string())?;
+            Ok(())
+        }
+        _ => Err(Box::new(Unauthorized::new())),
+    }
+}
+
 fn perform_query(api_key: &str, query: HashMap<&str, String>) -> Result<String, reqwest::Error> {
     let client = reqwest::Client::new();
     let mut res = client

@@ -29,8 +29,8 @@ fn main() -> CliResult {
         if no_selection {
             let (selected_option, inputed_id) = main_select();
             match selected_option {
-                0 => pipe_sub_select(inputed_id),
-                1 => company_sub_select(inputed_id),
+                0 => pipe_sub_select(&api_key, inputed_id),
+                1 => company_sub_select(&api_key, inputed_id),
                 2 => card_sub_select(&api_key, inputed_id),
                 _ => break,
             };
@@ -59,7 +59,11 @@ fn main_select<'a>() -> (i32, i32) {
     (select as i32, input)
 }
 
-fn pipe_sub_select<'a>(pipe_id: i32) -> (i32, i32) {
+fn pipe_sub_select<'a>(api_key: &str, pipe_id: i32) -> (i32, i32) {
+    if let Err(_) = graphql::pipe_name_query(api_key, pipe_id) {
+        println!("Unauthorized");
+        return (0, 0);
+    }
     let selections = &["Phases", "Cards"];
 
     let select = Select::with_theme(&ColorfulTheme::default())
@@ -69,7 +73,13 @@ fn pipe_sub_select<'a>(pipe_id: i32) -> (i32, i32) {
         .interact()
         .unwrap();
 
-    (select as i32, 0)
+    match select {
+        0 => graphql::pipe_phases_query(api_key, pipe_id),
+        1 => Ok(()),
+        _ => Ok(()),
+    };
+
+    (0, 0)
 }
 fn card_sub_select(api_key: &str, id: i32) -> (i32, i32) {
     if let Err(_) = graphql::card_query_and_print(api_key, id) {
@@ -77,7 +87,7 @@ fn card_sub_select(api_key: &str, id: i32) -> (i32, i32) {
     }
     (0, 0)
 }
-fn company_sub_select<'a>(company_id: i32) -> (i32, i32) {
+fn company_sub_select<'a>(api_key: &str, company_id: i32) -> (i32, i32) {
     let selections = &["💈 Pipe", "🏭 Company", "🃏 Card"];
 
     let select = Select::with_theme(&ColorfulTheme::default())
@@ -87,5 +97,8 @@ fn company_sub_select<'a>(company_id: i32) -> (i32, i32) {
         .interact()
         .unwrap();
 
-    (select as i32, 0)
+    if let Err(_) = graphql::card_query_and_print(api_key, company_id) {
+        println!("Unauthorized");
+    }
+    (0, 0)
 }
