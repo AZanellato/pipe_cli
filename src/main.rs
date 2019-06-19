@@ -15,6 +15,7 @@ use quicli::prelude::*;
 use structopt::StructOpt;
 
 fn main() -> CliResult {
+    welcome();
     let cfg: ApiKey = load("pipe_cli")?;
     let working_cfg = match cfg.api_key {
         Some(key) => api_key::test_existing_api_key(key),
@@ -108,9 +109,64 @@ fn organization_sub_select<'a>(api_key: &str, company_id: i32) -> () {
         .items(&selections[..])
         .interact()
         .unwrap();
-
-    if let Err(_) = graphql::card_query_and_print(api_key, company_id) {
-        println!("Unauthorized");
+    match select {
+        0 => {
+            if let Err(_) = graphql::org_pipes_query(api_key, company_id) {
+                println!("Unauthorized");
+            }
+        }
+        1 => {
+            if let Err(_) = graphql::org_members_query(api_key, company_id) {
+                println!("Unauthorized");
+            }
+        }
+        _ => {
+            println!("Invalid option");
+        }
     }
-    (0, 0)
+}
+
+fn welcome() -> () {
+    println!("
+
+
+
+
+                                                                      `-/+o
+                                                                     /ssso+
+                                                                    /sss-
+          ---``-:///:.     `---` .--.`-:///:-`        .-////:.    .:ssso------`     .---.
+         `ossssssssssss/`  -sss. +ssssssssssss+.    -osssssssss/` +ssssssssssso.   :sss+
+         `ossso:.``.:ssss. -sss. +ssss/.``.:osss-  +sss/.``.:osso.`.sss+```.osss. -sss/
+         `osso`      `sss+ -sss. +sss.       +sss`-sss+///////sss+ `sss/    `osss-`+s/
+         `oss+        osso -sss. +sss`       /sss`:sssssssssssssso `sss/     `+sss-`-
+         `osss/`    `/sss: -sss. +sss+.    `:sss+ `osso.    `....  `sss/      `ssss`
+         `ossssso++ossso-  -sss. +ssssso++ossss/   `+sssso+ossso-  `sss/     `osss-
+         `oss+:+ossso/-    -ooo. +sss:+ossso+:`      .:+ossso/-    `ooo/    `osss.
+         `oss/                   +sso                                      .osso.
+         `oss/                   +sso                                     .ssso`
+          .--.                   .--.                                     .---`
+
+
+
+                                                                                                    ");
+}
+
+fn bye() -> () {
+    println!(
+        "
+
+88
+88
+88
+88,dPPYba,  8b       d8  ,adPPYba,
+88P'    ''8a `8b     d8' a8P_____88
+88       d8  `8b   d8'  8PP'''''''
+88b,   ,a8''   `8b,d8'   ''8b,   ,aa
+8Y'Ybbd8'''      Y88'    `''Ybbd8'''
+                d8'
+               d8'
+
+       "
+    );
 }
