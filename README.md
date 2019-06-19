@@ -1,5 +1,4 @@
 # pipe_cli
-Small CLI to interact with Pipefy's Public API in Rust! 🦀
 
 
                                                                       `-/+o
