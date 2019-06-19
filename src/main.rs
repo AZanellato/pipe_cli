@@ -30,17 +30,18 @@ fn main() -> CliResult {
             let (selected_option, inputed_id) = main_select();
             match selected_option {
                 0 => pipe_sub_select(&api_key, inputed_id),
-                1 => company_sub_select(&api_key, inputed_id),
+                1 => organization_sub_select(&api_key, inputed_id),
                 2 => card_sub_select(&api_key, inputed_id),
                 _ => break,
             };
         }
     }
+    bye();
     Ok(())
 }
 
 fn main_select<'a>() -> (i32, i32) {
-    let selections = &["💈 Pipe", "🏭 Company", "🃏 Card", "Exit"];
+    let selections = &["💈 Pipe", "🏭 Organization", "🃏 Card", "Exit"];
 
     let select = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("Choose what you want to see")
@@ -59,10 +60,10 @@ fn main_select<'a>() -> (i32, i32) {
     (select as i32, input)
 }
 
-fn pipe_sub_select<'a>(api_key: &str, pipe_id: i32) -> (i32, i32) {
+fn pipe_sub_select<'a>(api_key: &str, pipe_id: i32) -> () {
     if let Err(_) = graphql::pipe_name_query(api_key, pipe_id) {
         println!("Unauthorized");
-        return (0, 0);
+        return ();
     }
     let selections = &["Phases", "Cards"];
 
@@ -74,21 +75,32 @@ fn pipe_sub_select<'a>(api_key: &str, pipe_id: i32) -> (i32, i32) {
         .unwrap();
 
     match select {
-        0 => graphql::pipe_phases_query(api_key, pipe_id),
-        1 => Ok(()),
-        _ => Ok(()),
-    };
-
-    (0, 0)
+        0 => {
+            if let Err(_) = graphql::pipe_phases_query(api_key, pipe_id) {
+                println!("Unauthorized");
+            }
+        }
+        1 => {
+            if let Err(_) = graphql::pipe_cards_query(api_key, pipe_id) {
+                println!("Unauthorized");
+            }
+        }
+        _ => {
+            println!("Invalid option");
+        }
+    }
 }
-fn card_sub_select(api_key: &str, id: i32) -> (i32, i32) {
+fn card_sub_select(api_key: &str, id: i32) -> () {
     if let Err(_) = graphql::card_query_and_print(api_key, id) {
         println!("Unauthorized");
     }
-    (0, 0)
 }
-fn company_sub_select<'a>(api_key: &str, company_id: i32) -> (i32, i32) {
-    let selections = &["💈 Pipe", "🏭 Company", "🃏 Card"];
+fn organization_sub_select<'a>(api_key: &str, company_id: i32) -> () {
+    if let Err(_) = graphql::organization_name_query(api_key, company_id) {
+        println!("Unauthorized");
+        return ();
+    }
+    let selections = &["💈💈 Pipes 💈💈", "👥👥 Members 👥👥"];
 
     let select = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("What do you want to see?")

@@ -36,6 +36,48 @@ pub fn me_query(api_key: &str) -> Result<String, Box<Error>> {
     }
 }
 
+pub fn pipe_cards_query(api_key: &str, pipe_id: i32) -> Result<(), Box<Error>> {
+    let print = PrettyPrinter::default()
+        .language("rust")
+        .grid(true)
+        .line_numbers(true)
+        .build()
+        .unwrap();
+
+    let mut query: HashMap<&str, String> = HashMap::new();
+    let format_pipe_cards_query_string = format!(
+        "{{
+            allCards(pipeId: {id}) {{
+                edges {{
+                node {{
+                    id
+                    url
+                    title
+                    fields {{
+                    name
+                    value
+                    }}
+                }}
+                }}
+            }}
+        }}",
+        id = pipe_id
+    );
+    let pipe_cards_query_string = String::from(format_pipe_cards_query_string);
+    query.insert("query", pipe_cards_query_string);
+    let text_response = perform_query(api_key, query)?;
+    let response_body: Value = serde_json::from_str(&text_response)?;
+    match &response_body["data"]["allCards"]["edges"] {
+        serde_json::Value::Array(_) => {
+            let cards =
+                serde_json::to_string_pretty(&response_body["data"]["allCards"]["edges"]).unwrap();
+            print.string_with_header(cards, "Cards".to_string())?;
+            Ok(())
+        }
+        _ => Err(Box::new(Unauthorized::new())),
+    }
+}
+
 pub fn card_query_and_print(api_key: &str, card_id: i32) -> Result<(), Box<Error>> {
     let print = PrettyPrinter::default()
         .language("rust")
@@ -49,6 +91,7 @@ pub fn card_query_and_print(api_key: &str, card_id: i32) -> Result<(), Box<Error
         "query {{
         card(id: {id}) {{
             title
+            url
             fields {{
                 value
                 name
@@ -122,6 +165,113 @@ pub fn pipe_phases_query(api_key: &str, pipe_id: i32) -> Result<(), Box<Error>> 
             let phases =
                 serde_json::to_string_pretty(&response_body["data"]["pipe"]["phases"]).unwrap();
             print.string_with_header(phases, "Phases".to_string())?;
+            Ok(())
+        }
+        _ => Err(Box::new(Unauthorized::new())),
+    }
+}
+
+pub fn organization_name_query(api_key: &str, org_id: i32) -> Result<(), Box<Error>> {
+    let print = PrettyPrinter::default()
+        .language("rust")
+        .grid(true)
+        .line_numbers(true)
+        .build()
+        .unwrap();
+    let mut query: HashMap<&str, String> = HashMap::new();
+    let format_org_query_string = format!(
+        "query {{
+        organization(id: {id}) {{
+            name
+        }} }}",
+        id = org_id
+    );
+    let org_query_string = String::from(format_org_query_string);
+    query.insert("query", org_query_string);
+    let text_response = perform_query(api_key, query)?;
+    let response_body: Value = serde_json::from_str(&text_response)?;
+    match &response_body["data"]["organization"]["name"] {
+        serde_json::Value::String(response) => {
+            print.string_with_header(response.to_string(), "Organization Name".to_string())?;
+            Ok(())
+        }
+        _ => Err(Box::new(Unauthorized::new())),
+    }
+}
+
+pub fn org_pipes_query(api_key: &str, org_id: i32) -> Result<(), Box<Error>> {
+    let print = PrettyPrinter::default()
+        .language("rust")
+        .grid(true)
+        .line_numbers(true)
+        .build()
+        .unwrap();
+    let mut query: HashMap<&str, String> = HashMap::new();
+    let format_org_query_string = format!(
+        "{{
+            organization(id: {id})
+            {{
+                members {{
+                user {{
+                    id
+                    name
+                }}
+                role_name
+                }}
+                name
+            }}
+        }} ",
+        id = org_id
+    );
+    let org_query_string = String::from(format_org_query_string);
+    query.insert("query", org_query_string);
+    let text_response = perform_query(api_key, query)?;
+    let response_body: Value = serde_json::from_str(&text_response)?;
+    match &response_body["data"]["organization"]["members"] {
+        serde_json::Value::Array(response) => {
+            let members =
+                serde_json::to_string_pretty(&response_body["data"]["organization"]["members"])
+                    .unwrap();
+            print.string_with_header(members, "Members".to_string())?;
+            Ok(())
+        }
+        _ => Err(Box::new(Unauthorized::new())),
+    }
+}
+pub fn org_members_query(api_key: &str, org_id: i32) -> Result<(), Box<Error>> {
+    let print = PrettyPrinter::default()
+        .language("rust")
+        .grid(true)
+        .line_numbers(true)
+        .build()
+        .unwrap();
+    let mut query: HashMap<&str, String> = HashMap::new();
+    let format_org_query_string = format!(
+        "{{
+            organization(id: {id})
+            {{
+                members {{
+                user {{
+                    id
+                    name
+                }}
+                role_name
+                }}
+                name
+            }}
+        }} ",
+        id = org_id
+    );
+    let org_query_string = String::from(format_org_query_string);
+    query.insert("query", org_query_string);
+    let text_response = perform_query(api_key, query)?;
+    let response_body: Value = serde_json::from_str(&text_response)?;
+    match &response_body["data"]["organization"]["members"] {
+        serde_json::Value::Array(response) => {
+            let members =
+                serde_json::to_string_pretty(&response_body["data"]["organization"]["members"])
+                    .unwrap();
+            print.string_with_header(members, "Members".to_string())?;
             Ok(())
         }
         _ => Err(Box::new(Unauthorized::new())),
