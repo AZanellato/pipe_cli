@@ -20,4 +20,5 @@ Small CLI to interact with Pipefy's Public API in Rust! 🦀
 
 WIP, but working :)
 
-https://asciinema.org/a/252548 to check out a little bit more of what it can do.
+[![asciicast](https://asciinema.org/a/252548.svg)](https://asciinema.org/a/252548) 
+to check out a little bit more of what it can do.
