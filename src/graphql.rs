@@ -1,11 +1,28 @@
 use prettyprint::PrettyPrinter;
+use serde::de::{self, Deserializer};
+use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::error::Error;
+use std::fmt::Display;
+use std::str::FromStr;
 use std::{error, fmt};
 
 #[derive(Debug, Clone)]
 struct Unauthorized;
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct CardNode {
+    pub node: Card,
+}
+#[derive(Deserialize, Debug, Clone)]
+pub struct Card {
+    pub title: String,
+    #[serde(deserialize_with = "from_str")]
+    pub id: usize,
+    pub url: Option<String>,
+    pub fields: Option<Vec<Value>>,
+}
 
 impl Unauthorized {
     fn new() -> Unauthorized {
@@ -36,6 +53,30 @@ pub fn me_query(api_key: &str) -> Result<String, Box<Error>> {
     }
 }
 
+pub fn pipe_cards_select(api_key: &str, pipe_id: i32) -> Result<Vec<CardNode>, Box<Error>> {
+    let mut query: HashMap<&str, String> = HashMap::new();
+    let format_pipe_cards_query_string = format!(
+        "{{
+            allCards(pipeId: {id}) {{
+                edges {{
+                node {{
+                    id
+                    title
+                }}
+                }}
+            }}
+        }}",
+        id = pipe_id
+    );
+    let pipe_cards_query_string = String::from(format_pipe_cards_query_string);
+    query.insert("query", pipe_cards_query_string);
+    let text_response = perform_query(api_key, query)?;
+    let response_body: Value = serde_json::from_str(&text_response)?;
+    println!("{:?}", response_body["data"]["allCards"]["edges"]);
+    let cards: Vec<CardNode> =
+        serde_json::from_value(response_body["data"]["allCards"]["edges"].clone()).unwrap();
+    Ok(cards)
+}
 pub fn pipe_cards_query(api_key: &str, pipe_id: i32) -> Result<(), Box<Error>> {
     let print = PrettyPrinter::default()
         .language("rust")
@@ -287,4 +328,14 @@ fn perform_query(api_key: &str, query: HashMap<&str, String>) -> Result<String, 
         .send()?;
 
     res.text()
+}
+
+fn from_str<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+where
+    T: FromStr,
+    T::Err: Display,
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    T::from_str(&s).map_err(de::Error::custom)
 }

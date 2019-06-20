@@ -75,6 +75,20 @@ fn pipe_sub_select<'a>(api_key: &str, pipe_id: i32) -> () {
         .interact()
         .unwrap();
 
+    let cards = graphql::pipe_cards_select(api_key, pipe_id).unwrap();
+
+    let card_selection: Vec<String> = cards
+        .iter()
+        .map(|card_node| card_node.node.title.to_string())
+        .collect();
+
+    let card_select = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Which card?")
+        .default(0)
+        .items(&card_selection[..])
+        .interact()
+        .unwrap();
+
     match select {
         0 => {
             if let Err(_) = graphql::pipe_phases_query(api_key, pipe_id) {
@@ -128,10 +142,6 @@ fn organization_sub_select<'a>(api_key: &str, company_id: i32) -> () {
 
 fn welcome() -> () {
     println!("
-
-
-
-
                                                                       `-/+o
                                                                      /ssso+
                                                                     /sss-
@@ -146,27 +156,22 @@ fn welcome() -> () {
          `oss/                   +sso                                      .osso.
          `oss/                   +sso                                     .ssso`
           .--.                   .--.                                     .---`
-
-
-
                                                                                                     ");
 }
 
 fn bye() -> () {
     println!(
         "
-
-88
-88
-88
-88,dPPYba,  8b       d8  ,adPPYba,
-88P'    ''8a `8b     d8' a8P_____88
-88       d8  `8b   d8'  8PP'''''''
-88b,   ,a8''   `8b,d8'   ''8b,   ,aa
-8Y'Ybbd8'''      Y88'    `''Ybbd8'''
-                d8'
-               d8'
-
+        88
+        88
+        88
+        88,dPPYba,  8b       d8  ,adPPYba,
+        88P'    ''8a `8b     d8' a8P_____88
+        88       d8  `8b   d8'  8PP'''''''
+        88b,   ,a8''   `8b,d8'   ''8b,   ,aa
+        8Y'Ybbd8'''      Y88'    `''Ybbd8'''
+                        d8'
+                    d8'
        "
     );
 }
