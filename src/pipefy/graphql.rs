@@ -70,9 +70,14 @@ pub fn me_query(api_key: &str) -> Result<User, Box<Error>> {
     query.insert("query", String::from("query { me { name id } }"));
     let text_response = perform_query(api_key, query)?;
     let response_body: Value = serde_json::from_str(&text_response)?;
-    let user_info = serde_json::from_value::<UserInfo>(response_body["data"]["me"].to_owned());
-    match user_info {
-        Ok(user_info) => {
+    let name = response_body["data"]["me"]["name"].to_owned();
+    let string_id = serde_json::from_value::<String>(response_body["data"]["me"]["id"].to_owned());
+    match string_id {
+        Ok(string_id) => {
+            let user_info = UserInfo {
+                name: name.to_string().replace("\"", ""),
+                id: string_id.parse().unwrap(),
+            };
             let user = User {
                 api_key: api_key.to_string(),
                 info: user_info,

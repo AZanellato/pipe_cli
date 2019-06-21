@@ -12,7 +12,6 @@ pub struct User {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserInfo {
     pub name: String,
-    #[serde(deserialize_with = "crate::graphql::from_str")]
     pub id: u32,
 }
 
@@ -51,8 +50,7 @@ impl ::std::default::Default for User {
 pub fn test_existing_api_key(user: User) -> User {
     match test_api_key(user.api_key) {
         Ok(user) => user,
-        Err(e) => {
-            println!("{}", e);
+        Err(_) => {
             println!("Your API key is invalid, please update it");
             get_working_api_key()
         }
@@ -62,8 +60,7 @@ pub fn get_working_api_key() -> User {
     let api_key = get_api_key();
     match test_api_key(api_key) {
         Ok(user) => user,
-        Err(e) => {
-            println!("{}", e);
+        Err(_) => {
             println!("Invalid API key, please try again");
             get_working_api_key()
         }
@@ -82,9 +79,6 @@ fn test_api_key(api_key: String) -> Result<User, InvalidAPIKey> {
     let result = me_query(&api_key);
     match result {
         Ok(api_key) => Ok(api_key),
-        Err(e) => {
-            println!("{:?}", e);
-            Err(InvalidAPIKey::new())
-        }
+        Err(_) => Err(InvalidAPIKey::new()),
     }
 }
