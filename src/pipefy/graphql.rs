@@ -24,6 +24,29 @@ pub struct Card {
     pub fields: Option<Vec<Value>>,
 }
 
+#[derive(Deserialize, Debug, Clone)]
+pub struct Phase {
+    pub name: String,
+    pub cards_count: u32,
+    pub description: String,
+}
+
+impl Display for Card {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let print_url = &self.url.as_ref().map_or("", |url| url);
+        let default_fields = Vec::new();
+        let fields = self.fields.as_ref().map_or(&default_fields, |f| f);
+        let printable_fields = fields
+            .iter()
+            .fold(String::new(), |acc, arg| acc + &arg.to_string() + ",\n");
+        write!(
+            f,
+            "Title: {},\nid: {},\nurl: {},\nfields: {}",
+            self.title, self.id, print_url, printable_fields
+        )
+    }
+}
+
 impl Unauthorized {
     fn new() -> Unauthorized {
         Unauthorized {}
@@ -61,7 +84,12 @@ pub fn pipe_cards_select(api_key: &str, pipe_id: i32) -> Result<Vec<CardNode>, B
                 edges {{
                 node {{
                     id
+                    url
                     title
+                    fields {{
+                        name
+                        value
+                    }}
                 }}
                 }}
             }}
@@ -72,10 +100,13 @@ pub fn pipe_cards_select(api_key: &str, pipe_id: i32) -> Result<Vec<CardNode>, B
     query.insert("query", pipe_cards_query_string);
     let text_response = perform_query(api_key, query)?;
     let response_body: Value = serde_json::from_str(&text_response)?;
-    println!("{:?}", response_body["data"]["allCards"]["edges"]);
-    let cards: Vec<CardNode> =
-        serde_json::from_value(response_body["data"]["allCards"]["edges"].clone()).unwrap();
-    Ok(cards)
+    let cards = serde_json::from_value::<Vec<CardNode>>(
+        response_body["data"]["allCards"]["edges"].to_owned(),
+    );
+    match cards {
+        Ok(cards) => Ok(cards),
+        _ => Err(Box::new(Unauthorized::new())),
+    }
 }
 pub fn pipe_cards_query(api_key: &str, pipe_id: i32) -> Result<(), Box<Error>> {
     let print = PrettyPrinter::default()
@@ -90,15 +121,15 @@ pub fn pipe_cards_query(api_key: &str, pipe_id: i32) -> Result<(), Box<Error>> {
         "{{
             allCards(pipeId: {id}) {{
                 edges {{
-                node {{
-                    id
-                    url
-                    title
-                    fields {{
-                    name
-                    value
+                    node {{
+                        id
+                        url
+                        title
+                        fields {{
+                            name
+                            value
+                        }}
                     }}
-                }}
                 }}
             }}
         }}",
@@ -108,11 +139,15 @@ pub fn pipe_cards_query(api_key: &str, pipe_id: i32) -> Result<(), Box<Error>> {
     query.insert("query", pipe_cards_query_string);
     let text_response = perform_query(api_key, query)?;
     let response_body: Value = serde_json::from_str(&text_response)?;
-    match &response_body["data"]["allCards"]["edges"] {
-        serde_json::Value::Array(_) => {
-            let cards =
-                serde_json::to_string_pretty(&response_body["data"]["allCards"]["edges"]).unwrap();
-            print.string_with_header(cards, "Cards".to_string())?;
+    let cards = serde_json::from_value::<Vec<CardNode>>(
+        response_body["data"]["allCards"]["edges"].to_owned(),
+    );
+    match cards {
+        Ok(cards) => {
+            let cards_as_string = cards.iter().fold("".to_string(), |acc, card_node| {
+                acc + "Card \n" + &card_node.node.to_string() + "\n"
+            });
+            print.string_with_header(cards_as_string, "Cards".to_string())?;
             Ok(())
         }
         _ => Err(Box::new(Unauthorized::new())),
@@ -131,6 +166,7 @@ pub fn card_query_and_print(api_key: &str, card_id: i32) -> Result<(), Box<Error
     let format_card_query_string = format!(
         "query {{
         card(id: {id}) {{
+            id
             title
             url
             fields {{
@@ -143,11 +179,10 @@ pub fn card_query_and_print(api_key: &str, card_id: i32) -> Result<(), Box<Error
     query.insert("query", card_query_string);
     let text_response = perform_query(api_key, query)?;
     let response_body: Value = serde_json::from_str(&text_response)?;
-    match &response_body["data"]["card"]["title"] {
-        serde_json::Value::String(response) => {
-            let field_values =
-                serde_json::to_string_pretty(&response_body["data"]["card"]["fields"]).unwrap();
-            print.string_with_header(field_values, response.to_string())?;
+    let card = serde_json::from_value::<Card>(response_body["data"]["card"].to_owned());
+    match card {
+        Ok(card) => {
+            print.string_with_header(card.to_string(), "Card".to_string())?;
             Ok(())
         }
         _ => Err(Box::new(Unauthorized::new())),
@@ -193,7 +228,11 @@ pub fn pipe_phases_query(api_key: &str, pipe_id: i32) -> Result<(), Box<Error>> 
     let format_pipe_query_string = format!(
         "query {{
         pipe(id: {id}) {{
-            phases {{ name cards_count description }}
+            phases {{
+                name
+                cards_count
+                description
+            }}
     }} }}",
         id = pipe_id
     );
