@@ -6,25 +6,25 @@ extern crate serde_json;
 extern crate structopt;
 mod args;
 mod pipefy;
-use api_key::ApiKey;
 use confy::{load, store};
 use dialoguer::{theme::ColorfulTheme, Input, Select};
 use itertools::any;
-use pipefy::{api_key, graphql};
+use pipefy::{graphql, user};
 use prettyprint::PrettyPrinter;
 use quicli::prelude::*;
 use structopt::StructOpt;
+use user::User;
 
 fn main() -> CliResult {
     welcome();
-    let cfg: ApiKey = load("pipe_cli")?;
-    let working_cfg = match cfg.api_key {
-        Some(key) => api_key::test_existing_api_key(key),
-        None => api_key::get_working_api_key(),
+    let stored_used = load::<User>("pipe_cli");
+    let user = match stored_used {
+        Ok(user) => user::test_existing_api_key(user),
+        _ => user::get_working_api_key(),
     };
-    println!("Hello {}! Welcome to Pipefy CLI", working_cfg.name);
-    store("pipe_cli", &working_cfg)?;
-    let api_key = &working_cfg.api_key.unwrap();
+    println!("Hello {}! Welcome to Pipefy CLI", user.info.name);
+    store("pipe_cli", &user)?;
+    let api_key = &user.api_key;
     let args = args::Opts::from_args();
     let no_selection = !any(&[args.pipe_id, args.card_id], |id| id.is_some());
     loop {

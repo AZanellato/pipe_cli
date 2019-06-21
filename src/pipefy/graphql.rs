@@ -1,3 +1,4 @@
+use crate::user::{User, UserInfo};
 use prettyprint::PrettyPrinter;
 use serde::de::{self, Deserializer};
 use serde::Deserialize;
@@ -64,15 +65,24 @@ impl error::Error for Unauthorized {
         None
     }
 }
-pub fn me_query(api_key: &str) -> Result<String, Box<Error>> {
+pub fn me_query(api_key: &str) -> Result<User, Box<Error>> {
     let mut query = HashMap::new();
-    query.insert("query", String::from("query { me { name } }"));
+    query.insert("query", String::from("query { me { name id } }"));
     let text_response = perform_query(api_key, query)?;
     let response_body: Value = serde_json::from_str(&text_response)?;
-    let name = &response_body["data"]["me"]["name"];
-    match name {
-        serde_json::Value::String(name) => Ok(name.to_string()),
-        _ => Err(Box::new(Unauthorized::new())),
+    let user_info = serde_json::from_value::<UserInfo>(response_body["data"]["me"].to_owned());
+    match user_info {
+        Ok(user_info) => {
+            let user = User {
+                api_key: api_key.to_string(),
+                info: user_info,
+            };
+            Ok(user)
+        }
+        Err(e) => {
+            println!("{}", e);
+            Err(Box::new(Unauthorized::new()))
+        }
     }
 }
 
@@ -369,7 +379,7 @@ fn perform_query(api_key: &str, query: HashMap<&str, String>) -> Result<String, 
     res.text()
 }
 
-fn from_str<'de, T, D>(deserializer: D) -> Result<T, D::Error>
+pub fn from_str<'de, T, D>(deserializer: D) -> Result<T, D::Error>
 where
     T: FromStr,
     T::Err: Display,
