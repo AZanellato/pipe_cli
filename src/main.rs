@@ -4,13 +4,14 @@ extern crate itertools;
 extern crate serde;
 extern crate serde_json;
 extern crate structopt;
-mod api_key;
 mod args;
-mod graphql;
+mod pipefy;
 use api_key::ApiKey;
 use confy::{load, store};
 use dialoguer::{theme::ColorfulTheme, Input, Select};
 use itertools::any;
+use pipefy::{api_key, graphql};
+use prettyprint::PrettyPrinter;
 use quicli::prelude::*;
 use structopt::StructOpt;
 
@@ -47,7 +48,8 @@ fn main_select<'a>() -> (i32, i32) {
     let select = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("Choose what you want to see")
         .default(0)
-        .items(&selections[..])
+        .items(selections)
+        .paged(true)
         .interact()
         .unwrap();
     if select == 3 {
@@ -66,26 +68,17 @@ fn pipe_sub_select<'a>(api_key: &str, pipe_id: i32) -> () {
         println!("Unauthorized");
         return ();
     }
-    let selections = &["Phases", "Cards"];
+    let selections = &[
+        "See All Phases",
+        "See All Cards",
+        "Select One Phase",
+        "Select One Card",
+    ];
 
     let select = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("What do you want to see?")
         .default(0)
-        .items(&selections[..])
-        .interact()
-        .unwrap();
-
-    let cards = graphql::pipe_cards_select(api_key, pipe_id).unwrap();
-
-    let card_selection: Vec<String> = cards
-        .iter()
-        .map(|card_node| card_node.node.title.to_string())
-        .collect();
-
-    let card_select = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("Which card?")
-        .default(0)
-        .items(&card_selection[..])
+        .items(selections)
         .interact()
         .unwrap();
 
@@ -100,11 +93,59 @@ fn pipe_sub_select<'a>(api_key: &str, pipe_id: i32) -> () {
                 println!("Unauthorized");
             }
         }
+
+        2 => {
+            phases_pipe_selection(api_key, pipe_id);
+        }
+
+        3 => {
+            cards_pipe_selection(api_key, pipe_id);
+        }
         _ => {
             println!("Invalid option");
         }
     }
 }
+
+fn phases_pipe_selection(api_key: &str, pipe_id: i32) -> () {
+    let selections = &["See all", "Select one"];
+
+    let select = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("What do you want to see?")
+        .default(0)
+        .items(selections)
+        .interact()
+        .unwrap();
+}
+fn cards_pipe_selection(api_key: &str, pipe_id: i32) -> () {
+    let cards = graphql::pipe_cards_select(api_key, pipe_id).unwrap();
+
+    let card_selection: Vec<String> = cards
+        .iter()
+        .map(|card_node| card_node.node.title.to_string())
+        .collect();
+
+    let card_select = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("Which card?")
+        .default(0)
+        .paged(true)
+        .items(&card_selection[..])
+        .interact()
+        .unwrap();
+
+    let print = PrettyPrinter::default()
+        .language("rust")
+        .grid(true)
+        .line_numbers(true)
+        .build()
+        .unwrap();
+
+    let card_node = cards.get(card_select).unwrap();
+    print
+        .string_with_header(card_node.node.to_string(), "Card".to_string())
+        .expect("Something went wrong printing the Card");
+}
+
 fn card_sub_select(api_key: &str, id: i32) -> () {
     if let Err(_) = graphql::card_query_and_print(api_key, id) {
         println!("Unauthorized");
@@ -120,7 +161,7 @@ fn organization_sub_select<'a>(api_key: &str, company_id: i32) -> () {
     let select = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("What do you want to see?")
         .default(0)
-        .items(&selections[..])
+        .items(selections)
         .interact()
         .unwrap();
     match select {
