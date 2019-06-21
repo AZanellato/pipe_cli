@@ -17,8 +17,8 @@ use user::User;
 
 fn main() -> CliResult {
     welcome();
-    let stored_used = load::<User>("pipe_cli");
-    let user = match stored_used {
+    let stored_user = load::<User>("pipe_cli");
+    let user = match stored_user {
         Ok(user) => user::test_existing_api_key(user),
         _ => user::get_working_api_key(),
     };
@@ -36,13 +36,20 @@ fn main() -> CliResult {
                 2 => card_sub_select(&api_key, inputed_id),
                 _ => break,
             };
-        }
+        } else {
+            if args.pipe_id.is_some() {
+                pipe_sub_select(&api_key, args.pipe_id.unwrap());
+            } else if args.card_id.is_some() {
+                card_sub_select(&api_key, args.card_id.unwrap());
+                break;
+            }
+        };
     }
     bye();
     Ok(())
 }
 
-fn main_select<'a>() -> (i32, i32) {
+fn main_select<'a>() -> (usize, usize) {
     let selections = &["💈 Pipe", "🏭 Organization", "🃏 Card", "Exit"];
 
     let select = Select::with_theme(&ColorfulTheme::default())
@@ -55,16 +62,16 @@ fn main_select<'a>() -> (i32, i32) {
     if select == 3 {
         return (3, 0);
     }
-    let input: i32 = Input::with_theme(&ColorfulTheme::default())
+    let input = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("The ID, please")
         .interact()
         .unwrap();
 
-    (select as i32, input)
+    (select, input)
 }
 
-fn pipe_sub_select<'a>(api_key: &str, pipe_id: i32) -> () {
-    if let Err(_) = graphql::pipe_name_query(api_key, pipe_id) {
+fn pipe_sub_select<'a>(api_key: &str, pipe_id: usize) -> () {
+    if let Err(_) = graphql::pipe_name_query(api_key, pipe_id as i32) {
         println!("Unauthorized");
         return ();
     }
@@ -84,12 +91,12 @@ fn pipe_sub_select<'a>(api_key: &str, pipe_id: i32) -> () {
 
     match select {
         0 => {
-            if let Err(_) = graphql::pipe_phases_query(api_key, pipe_id) {
+            if let Err(_) = graphql::pipe_phases_query(api_key, pipe_id as i32) {
                 println!("Unauthorized");
             }
         }
         1 => {
-            if let Err(_) = graphql::pipe_cards_query(api_key, pipe_id) {
+            if let Err(_) = graphql::pipe_cards_query(api_key, pipe_id as i32) {
                 println!("Unauthorized");
             }
         }
@@ -99,7 +106,7 @@ fn pipe_sub_select<'a>(api_key: &str, pipe_id: i32) -> () {
         }
 
         3 => {
-            cards_pipe_selection(api_key, pipe_id);
+            cards_pipe_selection(api_key, pipe_id as i32);
         }
         _ => {
             println!("Invalid option");
@@ -107,7 +114,7 @@ fn pipe_sub_select<'a>(api_key: &str, pipe_id: i32) -> () {
     }
 }
 
-fn phases_pipe_selection(api_key: &str, pipe_id: i32) -> () {
+fn phases_pipe_selection(api_key: &str, pipe_id: usize) -> () {
     let selections = &["See all", "Select one"];
 
     let select = Select::with_theme(&ColorfulTheme::default())
@@ -146,13 +153,13 @@ fn cards_pipe_selection(api_key: &str, pipe_id: i32) -> () {
         .expect("Something went wrong printing the Card");
 }
 
-fn card_sub_select(api_key: &str, id: i32) -> () {
-    if let Err(_) = graphql::card_query_and_print(api_key, id) {
+fn card_sub_select(api_key: &str, id: usize) -> () {
+    if let Err(_) = graphql::card_query_and_print(api_key, id as i32) {
         println!("Unauthorized");
     }
 }
-fn organization_sub_select<'a>(api_key: &str, company_id: i32) -> () {
-    if let Err(_) = graphql::organization_name_query(api_key, company_id) {
+fn organization_sub_select<'a>(api_key: &str, company_id: usize) -> () {
+    if let Err(_) = graphql::organization_name_query(api_key, company_id as i32) {
         println!("Unauthorized");
         return ();
     }
@@ -166,12 +173,12 @@ fn organization_sub_select<'a>(api_key: &str, company_id: i32) -> () {
         .unwrap();
     match select {
         0 => {
-            if let Err(_) = graphql::org_pipes_query(api_key, company_id) {
+            if let Err(_) = graphql::org_pipes_query(api_key, company_id as i32) {
                 println!("Unauthorized");
             }
         }
         1 => {
-            if let Err(_) = graphql::org_members_query(api_key, company_id) {
+            if let Err(_) = graphql::org_members_query(api_key, company_id as i32) {
                 println!("Unauthorized");
             }
         }
