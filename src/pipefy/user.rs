@@ -4,9 +4,15 @@ use serde::{Deserialize, Serialize};
 use std::{error, fmt};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ApiKey {
-    pub api_key: Option<String>,
+pub struct User {
+    pub api_key: String,
+    pub info: UserInfo,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct UserInfo {
     pub name: String,
+    pub id: u32,
 }
 
 #[derive(Debug, Clone)]
@@ -29,28 +35,31 @@ impl error::Error for InvalidAPIKey {
     }
 }
 
-impl ::std::default::Default for ApiKey {
+impl ::std::default::Default for User {
     fn default() -> Self {
         Self {
-            api_key: None,
-            name: "".into(),
+            api_key: "".into(),
+            info: UserInfo {
+                name: "".into(),
+                id: 0,
+            },
         }
     }
 }
 
-pub fn test_existing_api_key(api_key: String) -> ApiKey {
-    match test_api_key(api_key) {
-        Ok(api_key) => api_key,
+pub fn test_existing_api_key(user: User) -> User {
+    match test_api_key(user.api_key) {
+        Ok(user) => user,
         Err(_) => {
             println!("Your API key is invalid, please update it");
             get_working_api_key()
         }
     }
 }
-pub fn get_working_api_key() -> ApiKey {
+pub fn get_working_api_key() -> User {
     let api_key = get_api_key();
     match test_api_key(api_key) {
-        Ok(api_key_name) => api_key_name,
+        Ok(user) => user,
         Err(_) => {
             println!("Invalid API key, please try again");
             get_working_api_key()
@@ -66,16 +75,10 @@ fn get_api_key() -> String {
     new_api_key.into()
 }
 
-fn test_api_key(api_key: String) -> Result<ApiKey, InvalidAPIKey> {
+fn test_api_key(api_key: String) -> Result<User, InvalidAPIKey> {
     let result = me_query(&api_key);
     match result {
-        Ok(name) => Ok(ApiKey {
-            name: name,
-            api_key: Some(api_key),
-        }),
-        Err(e) => {
-            println!("{:?}", e);
-            Err(InvalidAPIKey::new())
-        }
+        Ok(api_key) => Ok(api_key),
+        Err(_) => Err(InvalidAPIKey::new()),
     }
 }

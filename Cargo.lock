@@ -180,10 +180,11 @@ dependencies = [
 
 [[package]]
 name = "confy"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+version = "0.3.2-alpha.0"
+source = "git+https://github.com/rust-cli/confy#104d1a6d9734c4de20d6f6a3a00c18ca9ca0abae"
 dependencies = [
  "directories 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
  "toml 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -1174,7 +1175,7 @@ dependencies = [
 name = "pipe_cli"
 version = "0.1.0"
 dependencies = [
- "confy 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "confy 0.3.2-alpha.0 (git+https://github.com/rust-cli/confy)",
  "dialoguer 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "indicatif 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "itertools 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2119,7 +2120,7 @@ dependencies = [
 "checksum clap-verbosity-flag 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "bda14f5323b2b747f52908c5b7b8af7790784088bc7c2957a11695e39ad476dc"
 "checksum clicolors-control 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "73abfd4c73d003a674ce5d2933fca6ce6c42480ea84a5ffe0a2dc39ed56300f9"
 "checksum cloudabi 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
-"checksum confy 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "4b1400cd0dae7f27d2c7ced9492e1398d2e2df614570092a4936c73b416dedea"
+"checksum confy 0.3.2-alpha.0 (git+https://github.com/rust-cli/confy)" = "<none>"
 "checksum console 0.7.5 (registry+https://github.com/rust-lang/crates.io-index)" = "2bf3720d3f3fc30b721ef1ae54e13af3264af4af39dc476a8de56a6ee1e2184b"
 "checksum content_inspector 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)" = "b7bda66e858c683005a53a9a60c69a4aca7eeaa45d124526e389f7aec8e62f38"
 "checksum cookie 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)" = "888604f00b3db336d2af898ec3c1d5d0ddf5e6d462220f2ededc33a87ac4bbd5"
